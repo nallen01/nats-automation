@@ -1,14 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
+using BMDSwitcherAPI;
 
 namespace NatsAutomation
 {
@@ -77,6 +72,7 @@ namespace NatsAutomation
 
             // Connect to Vision
             int currentVision = 1;
+            this.VisionServices = new List<VisionService>();
             try
             {
                 _BMDSwitcherConnectToFailure failReason = 0;
@@ -120,6 +116,7 @@ namespace NatsAutomation
 
             // Connect to Lighting
             int currentLighting = 1;
+            this.LightingServices = new List<LightingService>();
             try
             {
                 foreach (String IP in Config.LightingIPs)
