@@ -13,6 +13,7 @@ namespace NatsAutomation
     public class CommsService
     {
         private static int PORT = 5555;
+        private static int SOCKET_CONNECTION_TIMEOUT_MS = 1000;
         private static List<int> ValidAuthGroups = new List<int> { 1 };
         private static List<int> ShouldShowFox = new List<int> { 3 };
 
@@ -72,11 +73,11 @@ namespace NatsAutomation
         private void CleanUp()
         {
             if (Client != null)
-            {
                 Client.Close();
+            if (ClientIn != null)
                 ClientIn.Close();
+            if (ClientOut != null)
                 ClientOut.Close();
-            }
 
             for (int i = 0; i < ReceiveFinished.Length; i++ )
             {
@@ -293,12 +294,16 @@ namespace NatsAutomation
             return ShouldShowFox.Contains(AudienceDisplay[division]);
         }
 
-        public Boolean Login(String ip, String username, String password)
+        public void Login(String ip, String username, String password)
         {
             try
             {
                 Client = new TcpClient();
-                Client.Connect(ip, PORT);
+                if (!Client.ConnectAsync(ip, PORT).Wait(SOCKET_CONNECTION_TIMEOUT_MS))
+                {
+                    throw new Exception("Connection timeout");
+                }
+
                 Stream ClientStream = Client.GetStream();
                 ClientIn = new StreamReader(ClientStream);
                 ClientOut = new StreamWriter(ClientStream);
@@ -306,7 +311,7 @@ namespace NatsAutomation
             catch (Exception)
             {
                 CleanUp();
-                throw new Exception("Unable to connect to server at " + ip);
+                throw new Exception("Unable to connect to server at " + ip + ":" + PORT);
             }
 
             String rcv = ClientIn.ReadLine();
@@ -325,7 +330,7 @@ namespace NatsAutomation
                 if (ValidAuthGroups.Contains(AuthGroup))
                 {
                     Listener();
-                    return true;
+                    return;
                 }
 
                 CleanUp();

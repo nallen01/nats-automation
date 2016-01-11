@@ -44,6 +44,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="LightingService.cs" />
+    <Compile Include="VisionService.cs" />
     <Compile Include="CommsService.cs" />
     <Compile Include="Configuration.cs" />
     <Compile Include="DataEventArgs.cs" />
