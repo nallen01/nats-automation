@@ -11,6 +11,7 @@ namespace NatsAutomation
         public String EventManagerPassword;
 
         public Boolean IncludeFox;
+        public List<FoxEntry> FoxEntries;
 
         public List<String> LightingServers;
         public List<LightingEntry> LightingEntries;
@@ -34,6 +35,7 @@ namespace NatsAutomation
             this.LightingEntries = new List<LightingEntry>();
             this.VisionMixers = new List<String>();
             this.VisionEntries = new List<VisionEntry>();
+            this.FoxEntries = new List<FoxEntry>();
 
             for (int i = 0; i < lines.Length; i++)
             {
@@ -70,6 +72,30 @@ namespace NatsAutomation
                                 {
                                     throw new Exception("Unknown value for include_fox on line " + i);
                                 }
+                            }
+                        }
+                        else if (parts[0].Equals("fox_entry"))
+                        {
+                            if (parts.Length == 5)
+                            {
+                                int serverIndex = 0;
+                                int macroNumber = 0;
+
+                                if (!Int32.TryParse(parts[1], out serverIndex))
+                                    throw new Exception("Unknown Server Index '" + parts[1] + "' on line " + i);
+
+                                if (!Int32.TryParse(parts[4], out macroNumber))
+                                    throw new Exception("Unknown Macro Number '" + parts[4] + "' on line " + i);
+
+                                bool isShown = parts[3].Equals("show", StringComparison.InvariantCultureIgnoreCase);
+
+                                this.FoxEntries.Add(new FoxEntry()
+                                {
+                                    ServerIndex = serverIndex,
+                                    DivisionName = parts[2],
+                                    IsShown = isShown,
+                                    MacroNumber = macroNumber
+                                });
                             }
                         }
                         else if (parts[0].Equals("lighting_server"))
@@ -134,6 +160,14 @@ namespace NatsAutomation
                 }
             }
         }
+    }
+
+    public class FoxEntry
+    {
+        public int ServerIndex;
+        public String DivisionName;
+        public Boolean IsShown;
+        public int MacroNumber;
     }
 
     public class LightingEntry

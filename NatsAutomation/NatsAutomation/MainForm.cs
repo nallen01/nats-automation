@@ -24,6 +24,7 @@ namespace NatsAutomation
 
         private Dictionary<int, Dictionary<int, int>> VisionTasks;
         private Dictionary<int, Dictionary<int, int>> LightingTasks;
+        private Dictionary<int, Dictionary<int, Dictionary<bool, int>>> FoxTasks;
 
         private Panel FoxPanel;
         private Panel StatusPanel;
@@ -89,8 +90,6 @@ namespace NatsAutomation
                         throw new Exception("An unknown error occured");
                     }
                 }
-
-                Service.AddListener(new EventHandler(ServiceListener));
             }
             catch(Exception ex)
             {
@@ -104,11 +103,13 @@ namespace NatsAutomation
             // Connect to Vision
             VisionServices = new List<VisionService>();
             VisionTasks = new Dictionary<int, Dictionary<int, int>>();
+            FoxTasks = new Dictionary<int, Dictionary<int, Dictionary<bool, int>>>();
             try
             {
                 foreach (String VisionMixer in Config.VisionMixers)
                 {
                     VisionTasks.Add(VisionServices.Count, new Dictionary<int, int>());
+                    FoxTasks.Add(VisionServices.Count, new Dictionary<int, Dictionary<bool, int>>());
                     VisionServices.Add(new VisionService(VisionMixer));
                 }
             }
@@ -186,6 +187,26 @@ namespace NatsAutomation
 
                     i++;
                 }
+
+                i = 1;
+                foreach (FoxEntry Entry in Config.FoxEntries)
+                {
+                    if (Entry.ServerIndex >= VisionServices.Count)
+                        throw new Exception("Invalid Server Index for Vision Entry " + i);
+
+                    if (!Service.getDivisions().Any(div => div.Equals(Entry.DivisionName)))
+                        throw new Exception("Invalid Division Name for Vision Entry " + i);
+
+                    int divisionId = Service.getDivisionIdForName(Entry.DivisionName);
+
+                    if (!FoxTasks[Entry.ServerIndex].ContainsKey(divisionId))
+                        FoxTasks[Entry.ServerIndex].Add(divisionId, new Dictionary<bool, int>());
+
+                    if (FoxTasks[Entry.ServerIndex][divisionId].ContainsKey(Entry.IsShown))
+                        throw new Exception("Fox Entry " + i + " contains a Mixer-Division-Shown pair that has already been declared");
+
+                    FoxTasks[Entry.ServerIndex][divisionId].Add(Entry.IsShown, Entry.MacroNumber);
+                }
             }
             catch (Exception ex)
             {
@@ -197,6 +218,8 @@ namespace NatsAutomation
 
             // Show the form!
             ShowForm();
+
+            Service.AddListener(new EventHandler(ServiceListener));
         }
 
         private void SetSize(int width, int height)
@@ -388,7 +411,7 @@ namespace NatsAutomation
                 tmp.Size = new System.Drawing.Size(130, 20);
                 tmp.TextAlign = System.Drawing.ContentAlignment.MiddleRight;
 
-                RadioButton check = new RadioButton();
+                CheckBox check = new CheckBox();
                 this.FoxPanel.Controls.Add(check);
                 check.Location = new System.Drawing.Point(140, top);
                 check.Name = "fox_click_" + i;
@@ -472,7 +495,7 @@ namespace NatsAutomation
             if (fox_select != null && fox_out != null)
             {
                 Boolean output = false;
-                if (((RadioButton)fox_select).Checked)
+                if (((CheckBox)fox_select).Checked)
                 {
                     if (Service.GetValidDisplayForFox(division))
                     {
@@ -481,6 +504,18 @@ namespace NatsAutomation
                 }
 
                 ((CheckBox)fox_out).Checked = output;
+
+                // Update the vision for the fox show/hide
+                for (int i = 0; i < FoxTasks.Count; i++)
+                {
+                    if (FoxTasks[i].ContainsKey(division))
+                    {
+                        if (FoxTasks[i][division].ContainsKey(output))
+                        {
+                            VisionServices[i].RunMacro(FoxTasks[i][division][output]);
+                        }
+                    }
+                }
             }
         }
 

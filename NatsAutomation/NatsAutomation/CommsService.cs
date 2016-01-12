@@ -259,6 +259,19 @@ namespace NatsAutomation
             return Divisions.ToArray();
         }
 
+        public int getDivisionIdForName(String division)
+        {
+            for (int i = 0; i < Divisions.Count; i++)
+            {
+                if (Divisions[i].Equals(division))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
         public String[] getFieldsForDivision(String DivisionName)
         {
             for (int i = 0; i < Divisions.Count; i++)

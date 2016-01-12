@@ -14,22 +14,25 @@ namespace NatsAutomation
 
         public LightingService(String ip)
         {
-            try
+            if (!MainForm.IGNORE_VISION)
             {
-                Client = new TcpClient();
-                if (!Client.ConnectAsync(ip, PORT).Wait(SOCKET_CONNECTION_TIMEOUT_MS))
+                try
                 {
-                    throw new Exception("Connection timeout");
-                }
+                    Client = new TcpClient();
+                    if (!Client.ConnectAsync(ip, PORT).Wait(SOCKET_CONNECTION_TIMEOUT_MS))
+                    {
+                        throw new Exception("Connection timeout");
+                    }
 
-                Stream ClientStream = Client.GetStream();
-                ClientIn = new StreamReader(ClientStream);
-                ClientOut = new StreamWriter(ClientStream);
-            }
-            catch (Exception)
-            {
-                CleanUp();
-                throw new Exception("Unable to connect to server at " + ip + ":" + PORT);
+                    Stream ClientStream = Client.GetStream();
+                    ClientIn = new StreamReader(ClientStream);
+                    ClientOut = new StreamWriter(ClientStream);
+                }
+                catch (Exception)
+                {
+                    CleanUp();
+                    throw new Exception("Unable to connect to server at " + ip + ":" + PORT);
+                }
             }
         }
 
@@ -45,14 +48,17 @@ namespace NatsAutomation
 
         public void RunSequence(int index)
         {
-            FreeStylerPacket data = new FreeStylerPacket()
+            if (Client != null)
             {
-                Code = 504 + index,
-                TCPIPArgument = 255,
-                Argument = 0
-            };
+                FreeStylerPacket data = new FreeStylerPacket()
+                {
+                    Code = 504 + index,
+                    TCPIPArgument = 255,
+                    Argument = 0
+                };
 
-            SendFreeStylerPacket(data);
+                SendFreeStylerPacket(data);
+            }
         }
 
         public Boolean SendFreeStylerPacket(FreeStylerPacket packet)
