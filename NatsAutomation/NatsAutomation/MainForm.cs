@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows.Forms;
+using System.Linq;
 using BMDSwitcherAPI;
 
 namespace NatsAutomation
@@ -13,13 +14,16 @@ namespace NatsAutomation
         public static String CONFIG_FILE = @"NatsAutomation.cfg";
 
         public static Boolean IGNORE_VISION = true;
-        public static Boolean IGNORE_LIGHTING = false;
+        public static Boolean IGNORE_LIGHTING = true;
 
         private Configuration Config;
 
         private CommsService Service;
         private List<VisionService> VisionServices;
         private List<LightingService> LightingServices;
+
+        private Dictionary<int, Dictionary<int, int>> VisionTasks;
+        private Dictionary<int, Dictionary<int, int>> LightingTasks;
 
         public MainForm()
         {
@@ -92,11 +96,13 @@ namespace NatsAutomation
             
 
             // Connect to Vision
-            this.VisionServices = new List<VisionService>();
+            VisionServices = new List<VisionService>();
+            VisionTasks = new Dictionary<int, Dictionary<int, int>>();
             try
             {
                 foreach (String VisionMixer in Config.VisionMixers)
                 {
+                    VisionTasks.Add(VisionServices.Count, new Dictionary<int, int>());
                     VisionServices.Add(new VisionService(VisionMixer));
                 }
             }
@@ -110,11 +116,13 @@ namespace NatsAutomation
             
 
             // Connect to Lighting
-            this.LightingServices = new List<LightingService>();
+            LightingServices = new List<LightingService>();
+            LightingTasks = new Dictionary<int, Dictionary<int, int>>();
             try
             {
                 foreach (String LightingServer in Config.LightingServers)
                 {
+                    LightingTasks.Add(LightingServices.Count, new Dictionary<int, int>());
                     LightingServices.Add(new LightingService(LightingServer));
                 }
             }
@@ -128,7 +136,58 @@ namespace NatsAutomation
 
 
             // Validate Configuration File
+            try {
+                int i = 1;
+                foreach (VisionEntry Entry in Config.VisionEntries)
+                {
+                    if (Entry.ServerIndex >= VisionServices.Count)
+                        throw new Exception("Invalid Server Index for Vision Entry " + i);
 
+                    if (!Service.getDivisions().Any(div => div.Equals(Entry.DivisionName)))
+                        throw new Exception("Invalid Division Name for Vision Entry " + i);
+
+                    if (!Service.getFieldsForDivision(Entry.DivisionName).Any(field => field.Equals(Entry.FieldName)))
+                        throw new Exception("Invalid Field Name for Vision Entry " + i);
+
+                    int fieldId = Service.getFieldIdForDivisionAndName(Entry.DivisionName, Entry.FieldName);
+
+                    if (VisionTasks[Entry.ServerIndex].ContainsKey(fieldId))
+                        throw new Exception("Vision Entry " + i + " contains a Mixer-Division-Field pair that has already been declared");
+
+                    VisionTasks[Entry.ServerIndex].Add(fieldId, Entry.MacroNumber);
+
+                    i++;
+                }
+
+                i = 1;
+                foreach (LightingEntry Entry in Config.LightingEntries)
+                {
+                    if (Entry.ServerIndex >= LightingServices.Count)
+                        throw new Exception("Invalid Server Index for Lighting Entry " + i);
+
+                    if (!Service.getDivisions().Any(div => div.Equals(Entry.DivisionName)))
+                        throw new Exception("Invalid Division Name for Lighting Entry " + i);
+
+                    if (!Service.getFieldsForDivision(Entry.DivisionName).Any(field => field.Equals(Entry.FieldName)))
+                        throw new Exception("Invalid Field Name for Lighting Entry " + i);
+
+                    int fieldId = Service.getFieldIdForDivisionAndName(Entry.DivisionName, Entry.FieldName);
+
+                    if (LightingTasks[Entry.ServerIndex].ContainsKey(fieldId))
+                        throw new Exception("Lighting Entry " + i + " contains a Server-Division-Field pair that has already been declared");
+
+                    LightingTasks[Entry.ServerIndex].Add(fieldId, Entry.SequenceNumber);
+
+                    i++;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Configuration Error:\n\n" + ex.Message, APPLICATION_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CleanUp();
+                Application.Exit();
+                return;
+            }
 
             var x = 1;
         }

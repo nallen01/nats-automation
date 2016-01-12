@@ -43,6 +43,7 @@ namespace NatsAutomation
         private Boolean[] ReceiveFinished = { false, false, false };
 
         private List<String> Divisions;
+        private Dictionary<int, List<int>> DivisionFields;
 
         private List<String> Fields;
         private List<int[]> QueuedMatch;
@@ -53,6 +54,7 @@ namespace NatsAutomation
         public CommsService()
         {
             Divisions = new List<String>();
+            DivisionFields = new Dictionary<int, List<int>>();
 
             Fields = new List<String>();
             QueuedMatch = new List<int[]>();
@@ -88,6 +90,7 @@ namespace NatsAutomation
             AuthGroup = 0;
 
             Divisions.Clear();
+            DivisionFields.Clear();
 
             Fields.Clear();
             QueuedMatch.Clear();
@@ -174,6 +177,11 @@ namespace NatsAutomation
 
                                     for (int i = 0; i < (parts.Length-2)/2; i++)
                                     {
+                                        int divId = Int32.Parse(parts[2 + i*2]) - 1;
+                                        if (!DivisionFields.ContainsKey(divId))
+                                            DivisionFields.Add(divId, new List<int>());
+
+                                        DivisionFields[divId].Add(Fields.Count);
                                         Fields.Add(parts[1 + i*2]);
                                     }
                                 }
@@ -249,6 +257,50 @@ namespace NatsAutomation
         public String[] getDivisions()
         {
             return Divisions.ToArray();
+        }
+
+        public String[] getFieldsForDivision(String DivisionName)
+        {
+            for (int i = 0; i < Divisions.Count; i++)
+            {
+                if (Divisions[i].Equals(DivisionName))
+                {
+                    if (DivisionFields.ContainsKey(i))
+                    {
+                        List<String> fields = new List<String>();
+                        foreach (int fieldId in DivisionFields[i])
+                        {
+                            fields.Add(Fields[fieldId]);
+                        }
+
+                        return fields.ToArray();
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        public int getFieldIdForDivisionAndName(String division, String field)
+        {
+            for (int i = 0; i < Divisions.Count; i++)
+            {
+                if (Divisions[i].Equals(division))
+                {
+                    if (DivisionFields.ContainsKey(i))
+                    {
+                        for (int j = 0; j < DivisionFields[i].Count; j++)
+                        {
+                            if (Fields[DivisionFields[i][j]].Equals(field))
+                            {
+                                return DivisionFields[i][j];
+                            }
+                        }
+                    }
+                }
+            }
+
+            return -1;
         }
 
         public String getField(int index)
