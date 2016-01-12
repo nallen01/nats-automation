@@ -12,6 +12,9 @@ namespace NatsAutomation
         public static String APPLICATION_NAME = "Nats Automation";
         public static String CONFIG_FILE = @"NatsAutomation.cfg";
 
+        public static Boolean IGNORE_VISION = true;
+        public static Boolean IGNORE_LIGHTING = false;
+
         private Configuration Config;
 
         private CommsService Service;
@@ -21,6 +24,14 @@ namespace NatsAutomation
         public MainForm()
         {
             InitializeComponent();
+        }
+
+        public void CleanUp()
+        {
+            if (Service != null)
+            {
+                Service.Logout();
+            }
         }
 
         public void MainForm_Load(object sender, EventArgs e)
@@ -34,6 +45,7 @@ namespace NatsAutomation
             catch (Exception ex)
             {
                 MessageBox.Show("Unable to read configuration file '" + CONFIG_FILE + "'\n\n" + ex.Message, APPLICATION_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CleanUp();
                 Application.Exit();
                 return;
             }
@@ -65,70 +77,43 @@ namespace NatsAutomation
             catch(Exception ex)
             {
                 MessageBox.Show("Unable to connect to Event Manager server:\n\n" + ex.Message, APPLICATION_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CleanUp();
                 Application.Exit();
                 return;
             }
             
 
             // Connect to Vision
-            int currentVision = 1;
             this.VisionServices = new List<VisionService>();
             try
             {
-                _BMDSwitcherConnectToFailure failReason = 0;
-
-                CBMDSwitcherDiscovery switcher_discovery = new CBMDSwitcherDiscovery();
-                if (switcher_discovery == null)
+                foreach (String VisionMixer in Config.VisionMixers)
                 {
-                    throw new Exception("ATEM Switcher Software not installed");
-                }
-
-                foreach (String IP in Config.VisionIPs)
-                {
-                    try
-                    {
-                        IBMDSwitcher Switcher;
-                        switcher_discovery.ConnectTo(IP, out Switcher, out failReason);
-                        VisionServices.Add(new VisionService(Switcher));
-                        currentVision++;
-                    }
-                    catch (COMException)
-                    {
-                        switch (failReason)
-                        {
-                            case _BMDSwitcherConnectToFailure.bmdSwitcherConnectToFailureNoResponse:
-                                throw new Exception("No response from Switcher at " + IP);
-                            case _BMDSwitcherConnectToFailure.bmdSwitcherConnectToFailureIncompatibleFirmware:
-                                throw new Exception("Switcher at " + IP + " has incompatible firmware");
-                            default:
-                                throw new Exception("Connection to " + IP + " failed for unknown reason");
-                        }
-                    }
+                    VisionServices.Add(new VisionService(VisionMixer));
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Unable to connect to Vision Mixer #" + currentVision + ":\n\n" + ex.Message, APPLICATION_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Unable to connect to Vision Mixer #" + (VisionServices.Count+1) + ":\n\n" + ex.Message, APPLICATION_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CleanUp();
                 Application.Exit();
                 return;
             }
             
 
             // Connect to Lighting
-            int currentLighting = 1;
             this.LightingServices = new List<LightingService>();
             try
             {
-                foreach (String IP in Config.LightingIPs)
+                foreach (IPPortCombo LightingServer in Config.LightingServers)
                 {
-                    // TODO: Add actual code here to connect to lighting service
                     LightingServices.Add(new LightingService());
-                    currentLighting++;
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Unable to connect to Lighting Device #" + currentLighting + ":\n\n" + ex.Message, APPLICATION_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Unable to connect to Lighting Device #" + (LightingServices.Count + 1) + ":\n\n" + ex.Message, APPLICATION_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                CleanUp();
                 Application.Exit();
                 return;
             }

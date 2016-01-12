@@ -10,12 +10,10 @@ namespace NatsAutomation
         public String EventManagerUsername;
         public String EventManagerPassword;
 
-        public int NumLightingServers;
-        public List<String> LightingIPs;
+        public List<IPPortCombo> LightingServers;
         public List<LightingEntry> LightingEntries;
 
-        public int NumVisionServers;
-        public List<String> VisionIPs;
+        public List<String> VisionMixers;
         public List<VisionEntry> VisionEntries;
 
         public Configuration(String[] lines)
@@ -30,11 +28,9 @@ namespace NatsAutomation
 
         private void ParseConfigurationData(String[] lines)
         {
-            this.NumLightingServers = 0;
-            this.LightingIPs = new List<String>();
+            this.LightingServers = new List<IPPortCombo>();
             this.LightingEntries = new List<LightingEntry>();
-            this.NumVisionServers = 0;
-            this.VisionIPs = new List<String>();
+            this.VisionMixers = new List<String>();
             this.VisionEntries = new List<VisionEntry>();
 
             for (int i = 0; i < lines.Length; i++)
@@ -64,12 +60,20 @@ namespace NatsAutomation
                                 this.EventManagerPassword = parts[1];
                             }
                         }
-                        else if (parts[0].Equals("lighting_ip"))
+                        else if (parts[0].Equals("lighting_server"))
                         {
                             if (parts.Length == 2)
                             {
-                                this.LightingIPs.Add(parts[1]);
-                                this.NumLightingServers++;
+                                int portNumber = 0;
+
+                                if (!Int32.TryParse(parts[2], out portNumber))
+                                    throw new Exception("Unknown Port Number '" + parts[2] + "' on line " + i);
+
+                                this.LightingServers.Add(new IPPortCombo()
+                                {
+                                    IP = parts[1],
+                                    Port = portNumber
+                                });
                             }
                         }
                         else if (parts[0].Equals("lighting_entry"))
@@ -80,10 +84,10 @@ namespace NatsAutomation
                                 int sequenceNumber = 0;
 
                                 if (!Int32.TryParse(parts[1], out serverIndex))
-                                    throw new Exception("Unknown Server Index '" + parts[2] + "' on line " + i);
+                                    throw new Exception("Unknown Server Index '" + parts[1] + "' on line " + i);
 
                                 if (!Int32.TryParse(parts[4], out sequenceNumber))
-                                    throw new Exception("Unknown Sequence Number '" + parts[5] + "' on line " + i);
+                                    throw new Exception("Unknown Sequence Number '" + parts[4] + "' on line " + i);
 
                                 this.LightingEntries.Add(new LightingEntry()
                                 {
@@ -94,12 +98,11 @@ namespace NatsAutomation
                                 });
                             }
                         }
-                        else if (parts[0].Equals("vision_ip"))
+                        else if (parts[0].Equals("vision_mixer"))
                         {
                             if (parts.Length == 2)
                             {
-                                this.VisionIPs.Add(parts[1]);
-                                this.NumVisionServers++;
+                                this.VisionMixers.Add(parts[1]);
                             }
                         }
                         else if (parts[0].Equals("vision_entry"))
@@ -128,6 +131,12 @@ namespace NatsAutomation
                 }
             }
         }
+    }
+
+    public class IPPortCombo
+    {
+        public String IP;
+        public int Port;
     }
 
     public class LightingEntry

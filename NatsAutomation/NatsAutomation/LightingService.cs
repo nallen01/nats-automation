@@ -1,8 +1,9 @@
-﻿namespace NatsAutomation
+﻿using System;
+namespace NatsAutomation
 {
     public class LightingService
     {
-        public LightingService()
+        public LightingService(String IP, int Port)
         {
             
         }
