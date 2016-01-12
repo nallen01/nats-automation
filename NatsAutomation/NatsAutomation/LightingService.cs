@@ -42,5 +42,38 @@ namespace NatsAutomation
             if (ClientOut != null)
                 ClientOut.Close();
         }
+
+        public void RunSequence(int index)
+        {
+            FreeStylerPacket data = new FreeStylerPacket()
+            {
+                Code = 504 + index,
+                TCPIPArgument = 255,
+                Argument = 0
+            };
+
+            SendFreeStylerPacket(data);
+        }
+
+        public Boolean SendFreeStylerPacket(FreeStylerPacket packet)
+        {
+            if (packet.Code >= 0 && packet.Code < 1000 && packet.TCPIPArgument >= 0 && packet.TCPIPArgument < 1000 && packet.Argument >= 0 && packet.Argument < 1000)
+            {
+                String command = String.Format("FSOC{0:D3}{1:D3}{2:D3}", packet.Code, packet.TCPIPArgument, packet.Argument);
+
+                ClientOut.Write(command);
+
+                return true;
+            }
+
+            return false;
+        }
+
+        public class FreeStylerPacket
+        {
+            public int Code;
+            public int TCPIPArgument;
+            public int Argument;
+        }
     }
 }

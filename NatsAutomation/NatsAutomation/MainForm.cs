@@ -436,6 +436,24 @@ namespace NatsAutomation
             {
                 ((TextBox)cur_field).Text = field_name;
             }
+
+            // Update the vision to the new field
+            for (int i = 0; i < VisionTasks.Count; i++)
+            {
+                if (VisionTasks[i].ContainsKey(Service.GetCurField(division)))
+                {
+                    VisionServices[i].RunMacro(VisionTasks[i][Service.GetCurField(division)]);
+                }
+            }
+
+            // Update the lighting to the new field
+            for (int i = 0; i < LightingTasks.Count; i++)
+            {
+                if (LightingTasks[i].ContainsKey(Service.GetCurField(division)))
+                {
+                    LightingServices[i].RunSequence(LightingTasks[i][Service.GetCurField(division)]);
+                }
+            }
         }
 
         private void UpdateAudienceDisplay(int division)

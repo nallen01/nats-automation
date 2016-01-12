@@ -53,5 +53,11 @@ namespace NatsAutomation
                 }
             }
         }
+
+        public void RunMacro(int index)
+        {
+            IBMDSwitcherMacroControl macroControl = (IBMDSwitcherMacroControl) Switcher;
+            macroControl.Run(Convert.ToUInt32(index));
+        }
     }
 }
