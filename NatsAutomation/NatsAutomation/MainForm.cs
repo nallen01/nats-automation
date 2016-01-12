@@ -107,7 +107,7 @@ namespace NatsAutomation
             {
                 foreach (IPPortCombo LightingServer in Config.LightingServers)
                 {
-                    LightingServices.Add(new LightingService());
+                    LightingServices.Add(new LightingService(LightingServer.IP, LightingServer.Port));
                 }
             }
             catch (Exception ex)
