@@ -10,6 +10,8 @@ namespace NatsAutomation
         public String EventManagerUsername;
         public String EventManagerPassword;
 
+        public Boolean IncludeFox;
+
         public List<String> LightingServers;
         public List<LightingEntry> LightingEntries;
 
@@ -58,6 +60,16 @@ namespace NatsAutomation
                             if (parts.Length == 2)
                             {
                                 this.EventManagerPassword = parts[1];
+                            }
+                        }
+                        else if (parts[0].Equals("include_fox"))
+                        {
+                            if (parts.Length == 2)
+                            {
+                                if (!Boolean.TryParse(parts[1], out IncludeFox))
+                                {
+                                    throw new Exception("Unknown value for include_fox on line " + i);
+                                }
                             }
                         }
                         else if (parts[0].Equals("lighting_server"))
