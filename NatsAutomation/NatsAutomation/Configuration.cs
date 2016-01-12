@@ -10,7 +10,7 @@ namespace NatsAutomation
         public String EventManagerUsername;
         public String EventManagerPassword;
 
-        public List<IPPortCombo> LightingServers;
+        public List<String> LightingServers;
         public List<LightingEntry> LightingEntries;
 
         public List<String> VisionMixers;
@@ -28,7 +28,7 @@ namespace NatsAutomation
 
         private void ParseConfigurationData(String[] lines)
         {
-            this.LightingServers = new List<IPPortCombo>();
+            this.LightingServers = new List<String>();
             this.LightingEntries = new List<LightingEntry>();
             this.VisionMixers = new List<String>();
             this.VisionEntries = new List<VisionEntry>();
@@ -64,16 +64,7 @@ namespace NatsAutomation
                         {
                             if (parts.Length == 2)
                             {
-                                int portNumber = 0;
-
-                                if (!Int32.TryParse(parts[2], out portNumber))
-                                    throw new Exception("Unknown Port Number '" + parts[2] + "' on line " + i);
-
-                                this.LightingServers.Add(new IPPortCombo()
-                                {
-                                    IP = parts[1],
-                                    Port = portNumber
-                                });
+                                this.LightingServers.Add(parts[1]);
                             }
                         }
                         else if (parts[0].Equals("lighting_entry"))
@@ -131,12 +122,6 @@ namespace NatsAutomation
                 }
             }
         }
-    }
-
-    public class IPPortCombo
-    {
-        public String IP;
-        public int Port;
     }
 
     public class LightingEntry
