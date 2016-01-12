@@ -32,6 +32,14 @@ namespace NatsAutomation
             {
                 Service.Logout();
             }
+
+            if (LightingServices != null)
+            {
+                foreach (LightingService LightService in LightingServices)
+                {
+                    LightService.CleanUp();
+                }
+            }
         }
 
         public void MainForm_Load(object sender, EventArgs e)
@@ -123,6 +131,11 @@ namespace NatsAutomation
 
 
             var x = 1;
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            CleanUp();
         }
     }
 }
