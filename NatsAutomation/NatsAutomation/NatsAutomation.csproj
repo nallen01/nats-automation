@@ -45,6 +45,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="LightingService.cs" />
+    <Compile Include="TcpServer.cs" />
+    <Compile Include="TcpThread.cs" />
     <Compile Include="VisionService.cs" />
     <Compile Include="CommsService.cs" />
     <Compile Include="Configuration.cs" />

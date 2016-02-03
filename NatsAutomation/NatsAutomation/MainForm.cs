@@ -29,6 +29,8 @@ namespace NatsAutomation
         private Panel FoxPanel;
         private Panel StatusPanel;
 
+        private TcpServer FoxServer;
+
         public MainForm()
         {
             InitializeComponent();
@@ -62,7 +64,7 @@ namespace NatsAutomation
             {
                 MessageBox.Show("Unable to read configuration file '" + CONFIG_FILE + "'\n\n" + ex.Message, APPLICATION_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 CleanUp();
-                Application.Exit();
+                Environment.Exit(Environment.ExitCode);
                 return;
             }
 
@@ -95,7 +97,7 @@ namespace NatsAutomation
             {
                 MessageBox.Show("Unable to connect to Event Manager server:\n\n" + ex.Message, APPLICATION_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 CleanUp();
-                Application.Exit();
+                Environment.Exit(Environment.ExitCode);
                 return;
             }
             
@@ -117,7 +119,7 @@ namespace NatsAutomation
             {
                 MessageBox.Show("Unable to connect to Vision Mixer #" + (VisionServices.Count+1) + ":\n\n" + ex.Message, APPLICATION_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 CleanUp();
-                Application.Exit();
+                Environment.Exit(Environment.ExitCode);
                 return;
             }
             
@@ -137,7 +139,7 @@ namespace NatsAutomation
             {
                 MessageBox.Show("Unable to connect to Lighting Device #" + (LightingServices.Count + 1) + ":\n\n" + ex.Message, APPLICATION_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 CleanUp();
-                Application.Exit();
+                Environment.Exit(Environment.ExitCode);
                 return;
             }
 
@@ -212,8 +214,15 @@ namespace NatsAutomation
             {
                 MessageBox.Show("Configuration Error:\n\n" + ex.Message, APPLICATION_NAME, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 CleanUp();
-                Application.Exit();
+                Environment.Exit(Environment.ExitCode);
                 return;
+            }
+
+            if(Config.IncludeFox)
+            {
+                // Start the TCP Server to allow changing of division for Fox
+                FoxServer = new TcpServer(new EventHandler(ServiceListener));
+                FoxServer.run();
             }
 
             // Show the form!
@@ -519,6 +528,18 @@ namespace NatsAutomation
             }
         }
 
+        private void UpdateSelectedFox(int value)
+        {
+            for(int i=0; i<Service.getDivisions().Length; i++)
+            {
+                Control fox_select = GetFirstChildByName(this.FoxPanel.Controls, "fox_click_" + i);
+
+                ((CheckBox)fox_select).Checked = (i == value);
+
+                UpdateFox(i);
+            }
+        }
+
         private void Fox_Check(object sender, EventArgs e)
         {
             if (sender is CheckBox)
@@ -547,6 +568,9 @@ namespace NatsAutomation
                         this.Invoke(new MethodInvoker(() => UpdateAudienceDisplay(args.getDivision())));
                         if (Config.IncludeFox) { this.Invoke(new MethodInvoker(() => UpdateFox(args.getDivision()))); }
                         break;
+                    case "fox": // Fox Division Change
+                        this.Invoke(new MethodInvoker(() => UpdateSelectedFox(args.getDivision())));
+                        break;
                 }
             }
         }
@@ -554,6 +578,7 @@ namespace NatsAutomation
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             CleanUp();
+            Environment.Exit(Environment.ExitCode);
         }
     }
 }
