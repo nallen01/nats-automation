@@ -13,8 +13,8 @@ namespace NatsAutomation
         public static String APPLICATION_NAME = "Nats Automation";
         public static String CONFIG_FILE = @"NatsAutomation.cfg";
 
-        public static Boolean IGNORE_VISION = true;
-        public static Boolean IGNORE_LIGHTING = true;
+        public static Boolean IGNORE_VISION = false;
+        public static Boolean IGNORE_LIGHTING = false;
 
         private Configuration Config;
 
