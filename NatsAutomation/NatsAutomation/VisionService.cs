@@ -1,13 +1,19 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using BMDSwitcherAPI;
+using System.Timers;
+using System.Threading.Tasks;
 
 namespace NatsAutomation
 {
     public class VisionService
     {
+        private static TimeSpan macroWaitTime = TimeSpan.FromMilliseconds(10);
+
         private IBMDSwitcher Switcher;
         private IBMDSwitcherInputIterator InputIterator;
+
+        private DateTime nextMacroRun = new DateTime();
 
         public VisionService(String IP)
         {
@@ -54,12 +60,26 @@ namespace NatsAutomation
             }
         }
 
-        public void RunMacro(int index)
+        public async void RunMacro(int index)
         {
             if (Switcher != null)
             {
-                IBMDSwitcherMacroControl macroControl = (IBMDSwitcherMacroControl)Switcher;
-                macroControl.Run(Convert.ToUInt32(index));
+                while(true)
+                {
+                    if (nextMacroRun <= DateTime.Now)
+                    {
+                        nextMacroRun = DateTime.Now.Add(macroWaitTime);
+
+                        IBMDSwitcherMacroControl macroControl = (IBMDSwitcherMacroControl)Switcher;
+                        macroControl.Run(Convert.ToUInt32(index));
+
+                        return;
+                    }
+                    else
+                    {
+                        await Task.Delay(TimeSpan.FromMilliseconds(1));
+                    }
+                }
             }
         }
     }
