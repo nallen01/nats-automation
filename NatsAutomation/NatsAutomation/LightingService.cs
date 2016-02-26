@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Net.Sockets;
+using System.Text;
+
 namespace NatsAutomation
 {
     public class LightingService
@@ -9,8 +11,7 @@ namespace NatsAutomation
         private static int SOCKET_CONNECTION_TIMEOUT_MS = 1000;
 
         private TcpClient Client;
-        private StreamReader ClientIn;
-        private StreamWriter ClientOut;
+        private Stream ClientStream;
 
         public LightingService(String ip)
         {
@@ -24,9 +25,7 @@ namespace NatsAutomation
                         throw new Exception("Connection timeout");
                     }
 
-                    Stream ClientStream = Client.GetStream();
-                    ClientIn = new StreamReader(ClientStream);
-                    ClientOut = new StreamWriter(ClientStream);
+                    ClientStream = Client.GetStream();
                 }
                 catch (Exception)
                 {
@@ -38,12 +37,10 @@ namespace NatsAutomation
 
         public void CleanUp()
         {
+            if (ClientStream != null)
+                ClientStream.Close();
             if (Client != null)
                 Client.Close();
-            if (ClientIn != null)
-                ClientIn.Close();
-            if (ClientOut != null)
-                ClientOut.Close();
         }
 
         public void RunSequence(int index)
@@ -67,7 +64,7 @@ namespace NatsAutomation
             {
                 String command = String.Format("FSOC{0:D3}{1:D3}{2:D3}", packet.Code, packet.TCPIPArgument, packet.Argument);
 
-                ClientOut.Write(command);
+                ClientStream.Write(ASCIIEncoding.ASCII.GetBytes(command), 0, command.Length);
 
                 return true;
             }
