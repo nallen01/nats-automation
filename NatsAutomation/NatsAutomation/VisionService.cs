@@ -8,7 +8,7 @@ namespace NatsAutomation
 {
     public class VisionService
     {
-        private static TimeSpan macroWaitTime = TimeSpan.FromMilliseconds(10);
+        private static TimeSpan macroWaitTime = TimeSpan.FromMilliseconds(50);
 
         private IBMDSwitcher Switcher;
         private IBMDSwitcherInputIterator InputIterator;
