@@ -13,20 +13,49 @@ namespace NatsAutomation
         private static int PORT = 5555;
         private static int SOCKET_CONNECTION_TIMEOUT_MS = 1000;
         private static List<int> ValidAuthGroups = new List<int> { 1 };
-        private static List<int> ShouldShowFox = new List<int> { 3 };
+        private static List<int> ShouldShowFox = new List<int> { AUDIENCE_INMATCH };
+
+        private static int AUDIENCE_NONE = 0;
+        private static int AUDIENCE_LOGO = 5;
+        private static int AUDIENCE_INTRO = 1;
+        private static int AUDIENCE_INMATCH = 2;
+        private static int AUDIENCE_SAVED_MATCH_RESULTS = 3;
+        private static int AUDIENCE_SCHEDULE = 12;
+        private static int AUDIENCE_RANKINGS = 4;
+        private static int AUDIENCE_SKILLS_RANKINGS = 8;
+        private static int AUDIENCE_ALLIANCE_SELECTION = 6;
+        private static int AUDIENCE_ELIM_BRACKET = 7;
+        private static int AUDIENCE_SLIDES = 11;
+        private static int AUDIENCE_INSPECTION = 14;
+
+        private static int[] AUDIENCE_MAPPINGS_VRC = new int[] {
+            AUDIENCE_NONE,
+            AUDIENCE_LOGO,
+            AUDIENCE_INTRO,
+            AUDIENCE_INMATCH,
+            AUDIENCE_SAVED_MATCH_RESULTS,
+            AUDIENCE_SCHEDULE,
+            AUDIENCE_RANKINGS,
+            AUDIENCE_SKILLS_RANKINGS,
+            AUDIENCE_ALLIANCE_SELECTION,
+            AUDIENCE_ELIM_BRACKET,
+            AUDIENCE_SLIDES,
+            AUDIENCE_INSPECTION
+        };
 
         private static String[] AudienceDisplayNames = new String[] {
             "None",
+            "Logo",
             "Intro",
             "In-Match",
             "Saved Match Results",
+            "Schedule",
             "Rankings",
-            "Logo",
+            "SC Rankings",
             "Alliance Selection",
             "Elim Bracket",
             "Slides",
-            "SC Rankings",
-            "Schedule"
+            "Inspection"
         };
 
         private String IP;
@@ -152,20 +181,21 @@ namespace NatsAutomation
                                 {
                                     valid = true;
                                     division = Int32.Parse(parts[1]) - 1;
-                                    QueuedMatch[division][0] = Int32.Parse(parts[2]);
-                                    QueuedMatch[division][1] = Int32.Parse(parts[3]);
-                                    QueuedMatch[division][2] = Int32.Parse(parts[4]);
-                                    CurField[division] = Int32.Parse(parts[5]) - 1;
+
+                                    if(division < Divisions.Count)
+                                    {
+                                        QueuedMatch[division][0] = Int32.Parse(parts[2]);
+                                        QueuedMatch[division][1] = Int32.Parse(parts[3]);
+                                        QueuedMatch[division][2] = Int32.Parse(parts[4]);
+                                        CurField[division] = Int32.Parse(parts[5]) - 1;
+                                    }
                                 }
                                 else if (parts[0].Equals("12") && (parts.Length == 3))
                                 {
                                     valid = true;
                                     division = Int32.Parse(parts[1]) - 1;
-                                    if (parts[2].Equals("0"))
-                                    {
-                                        AudienceDisplay[division] = 1;
-                                    }
-                                    else
+
+                                    if(division < Divisions.Count)
                                     {
                                         AudienceDisplay[division] = Int32.Parse(parts[2]);
                                     }
@@ -174,6 +204,11 @@ namespace NatsAutomation
                                 {
                                     valid = true;
                                     Fields.Clear();
+
+                                    for (int i = 0; i < DivisionFields.Count; i++)
+                                    {
+                                        DivisionFields[i].Clear();
+                                    }
 
                                     for (int i = 0; i < (parts.Length-2)/2; i++)
                                     {
@@ -193,6 +228,7 @@ namespace NatsAutomation
                                     QueuedMatch.Clear();
                                     CurField.Clear();
                                     AudienceDisplay.Clear();
+                                    DivisionFields.Clear();
 
                                     for (int i = 1; i < parts.Length - 1; i++)
                                     {
@@ -200,6 +236,7 @@ namespace NatsAutomation
                                         QueuedMatch.Add(new int[] { -1, -1, -1 });
                                         CurField.Add(0);
                                         AudienceDisplay.Add(1);
+                                        DivisionFields.Add(i - 1, new List<int>());
                                     }
                                 }
 								
@@ -333,24 +370,15 @@ namespace NatsAutomation
 
         public String GetAudienceDisplay(int division)
         {
-            int selection = 0;
-            if (AudienceDisplay[division] <= 8)
+            for (int i = 0; i < AUDIENCE_MAPPINGS_VRC.Length; i++)
             {
-                selection = AudienceDisplay[division] - 1;
+                if (AUDIENCE_MAPPINGS_VRC[i] == AudienceDisplay[division])
+                {
+                    return AudienceDisplayNames[i];
+                }
             }
-            else if (AudienceDisplay[division] == 9)
-            {
-                selection = 9;
-            }
-            else if (AudienceDisplay[division] == 12)
-            {
-                selection = 8;
-            }
-            else if (AudienceDisplay[division] == 13)
-            {
-                selection = 10;
-            }
-            return AudienceDisplayNames[selection];
+
+            return "";
         }
 
         public Boolean GetValidDisplayForFox(int division) {
