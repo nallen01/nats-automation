@@ -13,7 +13,6 @@ namespace NatsAutomation
         private static int PORT = 5555;
         private static int SOCKET_CONNECTION_TIMEOUT_MS = 1000;
         private static List<int> ValidAuthGroups = new List<int> { 1 };
-        private static List<int> ShouldShowFox = new List<int> { AUDIENCE_INMATCH };
 
         private static int AUDIENCE_NONE = 0;
         private static int AUDIENCE_LOGO = 5;
@@ -27,6 +26,8 @@ namespace NatsAutomation
         private static int AUDIENCE_ELIM_BRACKET = 7;
         private static int AUDIENCE_SLIDES = 11;
         private static int AUDIENCE_INSPECTION = 14;
+
+        private static List<int> ShouldShowFox = new List<int> { AUDIENCE_INMATCH };
 
         private static int[] AUDIENCE_MAPPINGS_VRC = new int[] {
             AUDIENCE_NONE,
@@ -190,7 +191,7 @@ namespace NatsAutomation
                                         CurField[division] = Int32.Parse(parts[5]) - 1;
                                     }
                                 }
-                                else if (parts[0].Equals("12") && (parts.Length == 3))
+                                else if (parts[0].Equals("12") && (parts.Length == 4))
                                 {
                                     valid = true;
                                     division = Int32.Parse(parts[1]) - 1;
